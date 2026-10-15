@@ -15,7 +15,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: Upstream regression tests
-        run: timeout 1200 cargo test --locked --release transport::upstream:: -- --test-threads=2
+        run: |
+          timeout 1200 cargo test --locked --release transport::upstream:: -- --test-threads=2
       - name: Build deployable binary
         run: |
           timeout 900 cargo build --locked --release
