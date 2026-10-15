@@ -25,7 +25,8 @@ impl UpstreamManager {
         };
         let mut last_error = ProxyError::Config("No upstreams available".to_string());
         let mut attempts = 0u32;
-        for idx in candidates.into_iter().take(self.connect_retry_attempts as usize) {
+        let candidate_count = candidates.len().min(self.connect_retry_attempts as usize);
+        for (position, idx) in candidates.into_iter().take(candidate_count).enumerate() {
             let remaining = self.connect_budget.saturating_sub(started.elapsed());
             if remaining.is_zero() {
                 last_error = ProxyError::ConnectionTimeout { addr: target.to_string() };
@@ -98,7 +99,7 @@ impl UpstreamManager {
             }
             let remaining = self.connect_budget.saturating_sub(started.elapsed());
             let backoff = self.retry_backoff_with_jitter().min(remaining);
-            if !backoff.is_zero() && attempts < self.connect_retry_attempts {
+            if !backoff.is_zero() && position + 1 < candidate_count {
                 tokio::time::sleep(backoff).await;
             }
         }
@@ -110,7 +111,7 @@ impl UpstreamManager {
 }
 
 /// Verify a bounded unauthenticated MTProto exchange, without user data or credentials.
-async fn telegram_probe<S: AsyncRead + AsyncWrite + Unpin>(stream: &mut S) -> Result<()> {
+pub(super) async fn telegram_probe<S: AsyncRead + AsyncWrite + Unpin>(stream: &mut S) -> Result<()> {
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
     let nonce: [u8; 16] = rand::rng().random();
     let mut request = Vec::with_capacity(48);
@@ -127,12 +128,16 @@ async fn telegram_probe<S: AsyncRead + AsyncWrite + Unpin>(stream: &mut S) -> Re
     let mut length = [0u8; 4];
     stream.read_exact(&mut length).await?;
     let length = u32::from_le_bytes(length) as usize;
-    if !(40..=4096).contains(&length) {
+    if !(76..=4096).contains(&length) {
         return Err(ProxyError::InvalidHandshake("Invalid Telegram probe frame length".into()));
     }
     let mut response = vec![0; length];
     stream.read_exact(&mut response).await?;
-    if response[..8] != [0; 8] || response[20..24] != 0x05162463u32.to_le_bytes()
+    let body_len = u32::from_le_bytes(response[16..20].try_into().map_err(|_| {
+        ProxyError::InvalidHandshake("Invalid Telegram probe body length".into())
+    })?) as usize;
+    if body_len != length - 20 || response[..8] != [0; 8]
+        || response[20..24] != 0x05162463u32.to_le_bytes()
         || response[24..40] != nonce
     {
         return Err(ProxyError::InvalidHandshake("Telegram probe response/nonce mismatch".into()));

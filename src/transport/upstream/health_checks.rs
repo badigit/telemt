@@ -112,13 +112,16 @@ impl UpstreamManager {
                             let start = Instant::now();
                             let result = tokio::time::timeout(
                                 Duration::from_secs(HEALTH_CHECK_CONNECT_TIMEOUT_SECS),
-                                self.connect_via_upstream(
-                                    i,
-                                    &config,
-                                    endpoint,
-                                    Some(bind_rr.clone()),
-                                    Duration::from_secs(HEALTH_CHECK_CONNECT_TIMEOUT_SECS),
-                                ),
+                                async {
+                                    let (mut stream, egress) = self.connect_via_upstream(
+                                        i, &config, endpoint, Some(bind_rr.clone()),
+                                        Duration::from_secs(HEALTH_CHECK_CONNECT_TIMEOUT_SECS),
+                                    ).await?;
+                                    if self.failover_probe {
+                                        failover::telegram_probe(&mut stream).await?;
+                                    }
+                                    Ok::<_, ProxyError>((stream, egress))
+                                },
                             )
                             .await;
 

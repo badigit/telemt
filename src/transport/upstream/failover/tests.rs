@@ -26,11 +26,15 @@ async fn socks(blackhole: bool, wrong_nonce: bool) -> (SocketAddr, Arc<AtomicUsi
                         } else {
                             let mut request = [0; 48];
                             if stream.read_exact(&mut request).await.is_ok() {
-                                let mut response = [0; 40];
+                                let mut response = [0; 84];
+                                response[16..20].copy_from_slice(&64u32.to_le_bytes());
                                 response[20..24].copy_from_slice(&0x05162463u32.to_le_bytes());
                                 response[24..40].copy_from_slice(&request[32..48]);
+                                response[56] = 8;
+                                response[68..72].copy_from_slice(&0x1cb5c415u32.to_le_bytes());
+                                response[72..76].copy_from_slice(&1u32.to_le_bytes());
                                 if wrong_nonce { response[24] ^= 1; }
-                                stream.write_all(&40u32.to_le_bytes()).await?;
+                                stream.write_all(&84u32.to_le_bytes()).await?;
                                 stream.write_all(&response).await?;
                             }
                         }

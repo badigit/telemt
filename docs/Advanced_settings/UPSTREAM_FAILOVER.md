@@ -36,7 +36,8 @@ Middle-End connections and non-DC connections do not use this Direct-mode probe.
 Health failures are attributed to the attempted route even if a reserve succeeds.
 Connect success/failure metrics count the final request outcome; attempt metrics count
 candidate attempts, not the extra physical sockets used by readiness probes.
-Existing periodic checks can recover an upstream after it was marked unhealthy.
+When probes are enabled, periodic health checks also verify the real Telegram exchange
+before recovering an upstream; a SOCKS acknowledgement alone is insufficient.
 Changing these general switches requires a process restart to rebuild the manager.
 
 Focused regression tests live in `src/transport/upstream/failover/tests.rs`.
