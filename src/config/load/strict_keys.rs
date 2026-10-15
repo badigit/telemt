@@ -101,6 +101,8 @@ const GENERAL_CONFIG_KEYS: &[&str] = &[
     "me_adaptive_floor_max_warm_writers_per_core",
     "me_adaptive_floor_max_active_writers_global",
     "me_adaptive_floor_max_warm_writers_global",
+    "upstream_failover",
+    "upstream_failover_probe",
     "upstream_connect_retry_attempts",
     "upstream_connect_retry_backoff_ms",
     "upstream_connect_budget_ms",

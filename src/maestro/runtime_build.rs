@@ -86,6 +86,7 @@ pub(crate) async fn prepare_runtime(
             config.general.upstream_connect_failfast_hard_errors,
             stats.clone(),
         )
+        .with_failover(config.general.upstream_failover, config.general.upstream_failover_probe)
         .with_dns_overrides(&config.network.dns_overrides)
         .map_err(|error| format!("DNS override preparation failed: {}", error))?,
     );

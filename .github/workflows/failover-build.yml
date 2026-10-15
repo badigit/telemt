@@ -19,15 +19,20 @@ jobs:
           timeout 1200 cargo test --locked --release transport::upstream:: -- --test-threads=2
       - name: Build deployable binary
         run: |
-          timeout 900 cargo build --locked --release
-          test -s target/release/telemt
-          test "$(stat -c%s target/release/telemt)" -gt 1000000
-          target/release/telemt --version
-          sha256sum target/release/telemt > target/release/telemt.sha256
+          sudo apt-get update -qq
+          sudo apt-get install -y musl-tools
+          rustup target add x86_64-unknown-linux-musl
+          timeout 900 cargo build --locked --release --target x86_64-unknown-linux-musl
+          cp target/x86_64-unknown-linux-musl/release/telemt target/release/telemt-static
+          test "$(stat -c%s target/release/telemt-static)" -gt 1000000
+          file target/release/telemt-static | grep -E 'statically linked|static-pie linked'
+          target/release/telemt-static --version
+          cd target/release
+          sha256sum telemt-static > telemt-static.sha256
       - uses: actions/upload-artifact@v4
         with:
           name: telemt-linux-amd64-failover
           path: |
-            target/release/telemt
-            target/release/telemt.sha256
+            target/release/telemt-static
+            target/release/telemt-static.sha256
           retention-days: 90

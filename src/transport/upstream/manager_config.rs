@@ -29,6 +29,8 @@ impl UpstreamManager {
             .collect();
 
         Self {
+            failover: false,
+            failover_probe: false,
             upstreams: Arc::new(RwLock::new(states)),
             connect_retry_attempts: connect_retry_attempts.max(1),
             connect_retry_backoff: Duration::from_millis(connect_retry_backoff_ms),
@@ -41,6 +43,13 @@ impl UpstreamManager {
             stats,
             dns_resolver: Arc::new(GenerationDnsResolver::default()),
         }
+    }
+
+    /// Enable ordered, distinct-upstream retries without changing legacy selection.
+    pub(crate) fn with_failover(mut self, enabled: bool, probe: bool) -> Self {
+        self.failover = enabled;
+        self.failover_probe = enabled && probe;
+        self
     }
 
     pub(crate) fn with_dns_overrides(self, entries: &[String]) -> Result<Self> {

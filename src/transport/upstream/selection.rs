@@ -105,6 +105,9 @@ impl UpstreamManager {
         dc_idx: Option<i16>,
         scope: Option<&str>,
     ) -> Result<UpstreamStream> {
+        if self.failover {
+            return self.connect_failover(target, dc_idx, scope, self.failover_probe && dc_idx.is_some()).await.map(|(stream, _)| stream);
+        }
         let idx = self
             .select_upstream(dc_idx, scope)
             .await
@@ -147,6 +150,10 @@ impl UpstreamManager {
         dc_idx: Option<i16>,
         scope: Option<&str>,
     ) -> Result<(TcpStream, UpstreamEgressInfo)> {
+        if self.failover {
+            let (stream, egress) = self.connect_failover(target, dc_idx, scope, false).await?;
+            return Ok((stream.into_tcp()?, egress));
+        }
         let idx = self
             .select_upstream(dc_idx, scope)
             .await
