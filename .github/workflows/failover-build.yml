@@ -1,0 +1,32 @@
+name: Build tested failover binary
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      CARGO_BUILD_JOBS: 2
+      CARGO_PROFILE_RELEASE_LTO: thin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Upstream regression tests
+        run: timeout 1200 cargo test --locked --release transport::upstream:: -- --test-threads=2
+      - name: Build deployable binary
+        run: |
+          timeout 900 cargo build --locked --release
+          test -s target/release/telemt
+          test "$(stat -c%s target/release/telemt)" -gt 1000000
+          target/release/telemt --version
+          sha256sum target/release/telemt > target/release/telemt.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: telemt-linux-amd64-failover
+          path: |
+            target/release/telemt
+            target/release/telemt.sha256
+          retention-days: 90
