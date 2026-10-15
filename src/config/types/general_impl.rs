@@ -88,6 +88,8 @@ impl Default for GeneralConfig {
                 default_me_adaptive_floor_max_active_writers_global(),
             me_adaptive_floor_max_warm_writers_global:
                 default_me_adaptive_floor_max_warm_writers_global(),
+            upstream_failover: false,
+            upstream_failover_probe: false,
             upstream_connect_retry_attempts: default_upstream_connect_retry_attempts(),
             upstream_connect_retry_backoff_ms: default_upstream_connect_retry_backoff_ms(),
             upstream_connect_budget_ms: default_upstream_connect_budget_ms(),

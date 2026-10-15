@@ -83,6 +83,7 @@ pub(super) async fn run_telemt_core(
             config.general.upstream_connect_failfast_hard_errors,
             stats.clone(),
         )
+        .with_failover(config.general.upstream_failover, config.general.upstream_failover_probe)
         .with_dns_overrides(&config.network.dns_overrides)?,
     );
     let ip_tracker = Arc::new(UserIpTracker::new());

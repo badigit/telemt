@@ -254,7 +254,13 @@ pub struct GeneralConfig {
     /// Hard global cap for warm ME writers.
     #[serde(default = "default_me_adaptive_floor_max_warm_writers_global")]
     pub me_adaptive_floor_max_warm_writers_global: u32,
-    /// Connect attempts for the selected upstream before returning error/fallback.
+    /// Try distinct upstreams in configuration order under one connect budget.
+    #[serde(default)]
+    pub upstream_failover: bool,
+    /// Verify Direct-mode Telegram request/response on a disposable connection before use.
+    #[serde(default)]
+    pub upstream_failover_probe: bool,
+    /// Connect attempts for the selected upstream, or distinct candidates in failover mode.
     #[serde(default = "default_upstream_connect_retry_attempts")]
     pub upstream_connect_retry_attempts: u32,
     /// Delay in milliseconds between upstream connect attempts.

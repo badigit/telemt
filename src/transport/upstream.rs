@@ -323,6 +323,8 @@ struct HealthCheckGroup {
 
 #[derive(Clone)]
 pub struct UpstreamManager {
+    failover: bool,
+    failover_probe: bool,
     upstreams: Arc<RwLock<Vec<UpstreamState>>>,
     connect_retry_attempts: u32,
     connect_retry_backoff: Duration,
@@ -345,6 +347,8 @@ mod nat_contexts;
 mod selection;
 // Direct and proxied connection establishment.
 mod connect;
+// Opt-in ordered failover within one connection request.
+mod failover;
 // Startup Telegram DC connectivity probes.
 mod startup_probe;
 // Periodic upstream health checks.
